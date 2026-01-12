@@ -27,6 +27,7 @@ export const StatusLegend: React.FC<StatusLegendProps> = ({ className }) => {
         'bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-4',
         className
       )}
+      onWheel={(e) => e.stopPropagation()}
     >
       <h3 className="text-sm font-semibold text-gray-700 mb-3">상태 범례</h3>
       <div className="space-y-2">

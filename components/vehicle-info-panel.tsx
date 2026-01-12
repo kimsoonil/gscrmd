@@ -43,7 +43,10 @@ export const VehicleInfoPanel: React.FC<VehicleInfoPanelProps> = ({ node, onClos
   }
 
   return (
-    <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-xl p-5 min-w-[380px] max-w-[420px] max-h-[90vh] overflow-y-auto">
+    <div 
+      className="bg-white/95 backdrop-blur-sm rounded-lg shadow-xl p-5 min-w-[380px] max-w-[420px] max-h-[90vh] overflow-y-auto"
+      onWheel={(e) => e.stopPropagation()}
+    >
       {/* 헤더 */}
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-bold text-gray-800">차량 및 물류 정보</h3>
