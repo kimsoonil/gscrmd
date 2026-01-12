@@ -140,11 +140,11 @@ export default function DashboardPage() {
       
       // 스크롤 방향에 따라 데이터 수 조절 (100단위)
       if (e.deltaY > 0) {
-        // 아래로 스크롤 = 데이터 수 감소
-        adjustDataCount(-100);
-      } else {
-        // 위로 스크롤 = 데이터 수 증가
+        // 아래로 스크롤 = 데이터 수 증가
         adjustDataCount(100);
+      } else {
+        // 위로 스크롤 = 데이터 수 감소
+        adjustDataCount(-100);
       }
     };
 
