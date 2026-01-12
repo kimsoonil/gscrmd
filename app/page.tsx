@@ -27,7 +27,7 @@ export default function Home() {
               Real-time Monitoring Dashboard
             </h2>
             <p className="text-xl text-slate-300 max-w-2xl mx-auto">
-              브라우저 성능 한계를 극복한 고성능 물류/SCM 데이터 시각화 솔루션
+              브라우저 성능 한계를 극복한 고성능 물류 데이터 시각화 솔루션
             </p>
           </header>
 
@@ -38,7 +38,7 @@ export default function Home() {
                 <h3 className="text-2xl font-bold text-white mb-4">프로젝트 소개</h3>
                 <div className="space-y-4 text-slate-300 leading-relaxed">
                   <p>
-                    Global Supply Chain Real-time Monitoring Dashboard는 대규모 물류/SCM 데이터를 실시간으로 시각화하고 모니터링하기 위한 고성능 웹 애플리케이션입니다.
+                    Global Supply Chain Real-time Monitoring Dashboard는 대규모 물류 데이터를 실시간으로 시각화하고 모니터링하기 위한 고성능 웹 애플리케이션입니다.
                   </p>
                   <p>
                     수만 개의 물류 차량 위치 정보를 동시에 처리하고 렌더링해야 하는 상황에서, 기존 DOM 기반 렌더링 방식으로는 브라우저 성능 한계로 인해 프레임 드랍과 메모리 누수가 발생했습니다. 

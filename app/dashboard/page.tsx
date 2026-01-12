@@ -167,7 +167,7 @@ export default function DashboardPage() {
                 🚚 Global Supply Chain Real-time Monitoring Dashboard
               </h1>
               <p className="text-sm text-slate-400 mt-1">
-                고성능 물류/SCM 데이터 시각화 솔루션
+                고성능 물류 데이터 시각화 솔루션
               </p>
             </div>
           </div>
