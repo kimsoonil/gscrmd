@@ -1,46 +1,90 @@
-'use client';
+"use client";
 
 /**
  * 메인 대시보드 페이지
  * 고성능 물류 모니터링 대시보드를 제공합니다.
  */
 
-import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { DashboardCanvas } from '@/components/dashboard-canvas';
-import { StatusLegend } from '@/components/status-legend';
-import { LoadingIndicator } from '@/components/loading-indicator';
-import { ErrorMessage } from '@/components/error-message';
-import { VehicleInfoPanel } from '@/components/vehicle-info-panel';
+import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { DashboardCanvas } from "@/components/dashboard-canvas";
+import { StatusLegend } from "@/components/status-legend";
+import { LoadingIndicator } from "@/components/loading-indicator";
+import { ErrorMessage } from "@/components/error-message";
+import { VehicleInfoPanel } from "@/components/vehicle-info-panel";
 import {
   useLogisticsStore,
   useIsLoading,
   useError,
-} from '@/store/logistics-store';
-import type { RawLogisticsData, ProcessedLogisticsData, Cargo, Destination } from '@/types/logistics';
+} from "@/store/logistics-store";
+import type {
+  RawLogisticsData,
+  ProcessedLogisticsData,
+  Cargo,
+  Destination,
+} from "@/types/logistics";
 
 /**
  * 샘플 데이터 생성 함수
  * 실제 프로젝트에서는 API에서 데이터를 가져옵니다.
  */
 function generateSampleData(count: number = 10000): RawLogisticsData[] {
-  const statuses: RawLogisticsData['status'][] = [
-    'in-transit',
-    'delivered',
-    'delayed',
-    'pending',
+  const statuses: RawLogisticsData["status"][] = [
+    "in-transit",
+    "delivered",
+    "delayed",
+    "pending",
   ];
-  
-  const priorities: RawLogisticsData['priority'][] = ['low', 'normal', 'high', 'urgent'];
-  const cargoTypes = ['전자제품', '식품', '의류', '화학물품', '건설자재', '생활용품'];
-  const cities = ['서울', '부산', '대구', '인천', '광주', '대전', '울산', '수원'];
+
+  const priorities: RawLogisticsData["priority"][] = [
+    "low",
+    "normal",
+    "high",
+    "urgent",
+  ];
+  const cargoTypes = [
+    "전자제품",
+    "식품",
+    "의류",
+    "화학물품",
+    "건설자재",
+    "생활용품",
+  ];
+  const cities = [
+    "강남구",
+    "강동구",
+    "강북구",
+    "강서구",
+    "관악구",
+    "광진구",
+    "구로구",
+    "금천구",
+    "노원구",
+    "도봉구",
+    "동대문구",
+    "동작구",
+    "마포구",
+    "서대문구",
+    "서초구",
+    "성동구",
+    "성북구",
+    "송파구",
+    "양천구",
+    "영등포구",
+    "용산구",
+    "은평구",
+    "종로구",
+    "중구",
+    "중랑구",
+  ];
 
   return Array.from({ length: count }, (_, i) => {
-    const destLongitude = -180 + Math.random() * 360;
-    const destLatitude = -90 + Math.random() * 180;
-    const currentLongitude = -180 + Math.random() * 360;
-    const currentLatitude = -90 + Math.random() * 180;
-    
+    // 서울 위경도 범위 (Lat: 37.42 ~ 37.70, Lon: 126.76 ~ 127.18)
+    const destLongitude = 126.76 + Math.random() * (127.18 - 126.76);
+    const destLatitude = 37.42 + Math.random() * (37.7 - 37.42);
+    const currentLongitude = 126.76 + Math.random() * (127.18 - 126.76);
+    const currentLatitude = 37.42 + Math.random() * (37.7 - 37.42);
+
     const cargoCount = Math.floor(Math.random() * 5) + 1;
     const cargo: Cargo[] = Array.from({ length: cargoCount }, (_, j) => ({
       id: `cargo-${i}-${j}`,
@@ -59,19 +103,19 @@ function generateSampleData(count: number = 10000): RawLogisticsData[] {
       longitude: currentLongitude,
       latitude: currentLatitude,
       status: statuses[Math.floor(Math.random() * statuses.length)],
-      vehicleId: `VEH-${String(i + 1).padStart(6, '0')}`,
+      vehicleId: `VEH-${String(i + 1).padStart(6, "0")}`,
       timestamp: Date.now() - Math.random() * 86400000, // 최근 24시간 내
       destination: {
         longitude: destLongitude,
         latitude: destLatitude,
-        address: `${cities[Math.floor(Math.random() * cities.length)]}시 ${Math.floor(Math.random() * 100)}번지`,
+        address: `서울특별시 ${cities[Math.floor(Math.random() * cities.length)]} ${Math.floor(Math.random() * 100)}길`,
         name: `${cities[Math.floor(Math.random() * cities.length)]} 물류센터`,
       },
       cargo,
       estimatedArrival,
       priority: priorities[Math.floor(Math.random() * priorities.length)],
-      routeId: `ROUTE-${String(Math.floor(Math.random() * 1000)).padStart(4, '0')}`,
-      driverName: `기사${String(i % 100 + 1).padStart(3, '0')}`,
+      routeId: `ROUTE-${String(Math.floor(Math.random() * 1000)).padStart(4, "0")}`,
+      driverName: `기사${String((i % 100) + 1).padStart(3, "0")}`,
       totalWeight,
       totalVolume,
     };
@@ -85,7 +129,8 @@ export default function DashboardPage() {
   const isLoading = useIsLoading();
   const error = useError();
   const clearError = useLogisticsStore((state) => state.clearError);
-  const [selectedNode, setSelectedNode] = useState<ProcessedLogisticsData | null>(null);
+  const [selectedNode, setSelectedNode] =
+    useState<ProcessedLogisticsData | null>(null);
   const [dataCount, setDataCount] = useState(10000);
 
   // 초기 데이터 로드
@@ -107,8 +152,8 @@ export default function DashboardPage() {
     };
 
     updateCanvasSize();
-    window.addEventListener('resize', updateCanvasSize);
-    return () => window.removeEventListener('resize', updateCanvasSize);
+    window.addEventListener("resize", updateCanvasSize);
+    return () => window.removeEventListener("resize", updateCanvasSize);
   }, [setCanvasSize]);
 
   // 노드 클릭 핸들러
@@ -133,48 +178,25 @@ export default function DashboardPage() {
     });
   }, []);
 
-  // 스크롤로 데이터 수 조절
-  useEffect(() => {
-    const handleWheel = (e: WheelEvent) => {
-      e.preventDefault(); // 기본 스크롤 동작 방지
-      
-      // 스크롤 방향에 따라 데이터 수 조절 (100단위)
-      if (e.deltaY > 0) {
-        // 아래로 스크롤 = 데이터 수 증가
-        adjustDataCount(100);
-      } else {
-        // 위로 스크롤 = 데이터 수 감소
-        adjustDataCount(-100);
-      }
-    };
-
-    window.addEventListener('wheel', handleWheel, { passive: false });
-    
-    return () => {
-      window.removeEventListener('wheel', handleWheel);
-    };
-  }, [adjustDataCount]);
-
   return (
     <main className="h-screen bg-slate-900 overflow-hidden flex flex-col">
       {/* 헤더 */}
       <header className="bg-slate-800 border-b border-slate-700 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            
             <div>
               <h1 className="text-2xl font-bold text-white">
-                🚚 Global Supply Chain Real-time Monitoring Dashboard
+                🚚 Seoul Logistics Real-time Monitoring Dashboard
               </h1>
               <p className="text-sm text-slate-400 mt-1">
-                고성능 물류 데이터 시각화 솔루션
+                서울시 특화 고성능 물류 데이터 시각화 솔루션
               </p>
             </div>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <label htmlFor="dataCount" className="text-sm text-slate-300">
-                데이터 수:
+                물류 차량 데이터 수:
               </label>
               <div className="flex items-center gap-1">
                 <button
@@ -235,15 +257,12 @@ export default function DashboardPage() {
         )}
 
         {/* Canvas */}
-        <DashboardCanvas
-          className="w-full"
-          onNodeClick={handleNodeClick}
-        />
+        <DashboardCanvas className="w-full" onNodeClick={handleNodeClick} />
 
         {/* 사이드 패널 */}
         <div className="absolute top-4 right-4 z-10 space-y-4">
           <StatusLegend />
-          
+
           {/* 선택된 노드 정보 (차량 + 물류 정보) */}
           {selectedNode && (
             <VehicleInfoPanel
@@ -256,4 +275,3 @@ export default function DashboardPage() {
     </main>
   );
 }
-
