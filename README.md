@@ -2,13 +2,15 @@
 
 모의 물류 데이터를 Canvas로 표시하는 개인 기술 검증 프로젝트입니다. 회사 SCM 코드·내부 데이터는 사용하지 않습니다.
 
+[공개 데모](https://seoul-logistics-dashboard.slskdkfdl12.chatgpt.site/dashboard/) · [설계·검증 사례](https://kimsunil.netlify.app/projects/logistics)
+
 ## 확인된 구현
 
 - Next.js 15 / React 18 / TypeScript / Zustand
 - `app/dashboard/page.tsx`: 기본 10,000개 모의 차량 생성, 데이터 개수 선택
 - `components/dashboard-canvas.tsx`: Canvas 2D 색상별 배치 렌더링, 차량 선택
 - `utils/logistics-processor.ts`: 메인 스레드에서 비동기 청크 단위 좌표 전처리
-- `store/logistics-store.ts`: 상태 저장과 requestAnimationFrame 배치 업데이트
+- `store/logistics-store.ts`: 차량 ID·timestamp 기반 병합과 최신 비동기 결과 반영
 - `hooks/use-logistics-socket.ts`: WebSocket 연결 훅. 기본 비활성, 실제 물류 서버 미연동
 - `workers/`: Worker 구현 파일은 있으나 현재 상태 저장소의 처리 경로와 구분해야 합니다.
 
@@ -52,3 +54,5 @@ node scripts/benchmark-picking.mjs
 - Canvas는 데이터·크기·배경 변경 시에만 다시 그립니다. 매 프레임 전체 지도 초기화를 반복하지 않습니다.
 - 실제 지도 컨테이너의 크기를 ResizeObserver로 측정합니다. 모바일에서 헤더가 여러 줄이어도 지도 높이를 맞춥니다.
 - 테스트: 최신 요청 우선, 차량별 중복/이전 이벤트, 소량 메시지 반영/연결 해제 회귀 검증 포함.
+
+2026-11-20 갱신 정합성·소켓 버퍼 회귀 검증을 추가한 최종 테스트는 21개가 통과했습니다. 위 18개/커버리지 수치는 이전 측정 기록이며, 최신 변경 후 커버리지는 재측정하지 않았습니다.
