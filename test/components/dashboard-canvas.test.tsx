@@ -104,10 +104,11 @@ describe('DashboardCanvas', () => {
     
     const canvas = document.querySelector('canvas');
     if (canvas) {
+      await waitFor(() => expect(canvas.width).toBe(1920));
       // Canvas 클릭 이벤트 시뮬레이션
       const clickEvent = new MouseEvent('click', {
-        clientX: 100,
-        clientY: 100,
+        clientX: (100 - 1920 / 2) * 1.2 + 1920 / 2,
+        clientY: (100 - 1080 / 2) * 1.2 + 1080 / 2,
         bubbles: true,
       });
       canvas.dispatchEvent(clickEvent);

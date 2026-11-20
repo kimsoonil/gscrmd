@@ -5,8 +5,7 @@
  * 고성능 물류 모니터링 대시보드를 제공합니다.
  */
 
-import { useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { DashboardCanvas } from "@/components/dashboard-canvas";
 import { StatusLegend } from "@/components/status-legend";
 import { LoadingIndicator } from "@/components/loading-indicator";
@@ -123,7 +122,7 @@ function generateSampleData(count: number = 10000): RawLogisticsData[] {
 }
 
 export default function DashboardPage() {
-  const router = useRouter();
+  const containerRef = useRef<HTMLDivElement>(null);
   const setRawData = useLogisticsStore((state) => state.setRawData);
   const setCanvasSize = useLogisticsStore((state) => state.setCanvasSize);
   const isLoading = useIsLoading();
@@ -136,6 +135,7 @@ export default function DashboardPage() {
   // 초기 데이터 로드
   useEffect(() => {
     const loadData = () => {
+      setSelectedNode(null);
       const sampleData = generateSampleData(dataCount);
       setRawData(sampleData);
     };
@@ -145,15 +145,13 @@ export default function DashboardPage() {
 
   // Canvas 크기 설정
   useEffect(() => {
-    const updateCanvasSize = () => {
-      const width = window.innerWidth;
-      const height = window.innerHeight - 80; // 헤더 높이 제외
-      setCanvasSize(width, height);
-    };
-
-    updateCanvasSize();
-    window.addEventListener("resize", updateCanvasSize);
-    return () => window.removeEventListener("resize", updateCanvasSize);
+    const container = containerRef.current;
+    if (!container) return;
+    const observer = new ResizeObserver(([entry]) => {
+      setCanvasSize(Math.floor(entry.contentRect.width), Math.floor(entry.contentRect.height));
+    });
+    observer.observe(container);
+    return () => observer.disconnect();
   }, [setCanvasSize]);
 
   // 노드 클릭 핸들러
@@ -163,6 +161,7 @@ export default function DashboardPage() {
 
   // 데이터 재로드
   const handleReload = useCallback(() => {
+    setSelectedNode(null);
     clearError();
     const sampleData = generateSampleData(dataCount);
     setRawData(sampleData);
@@ -179,21 +178,21 @@ export default function DashboardPage() {
   }, []);
 
   return (
-    <main className="h-screen bg-slate-900 overflow-hidden flex flex-col">
+    <main className="h-dvh bg-slate-900 overflow-hidden flex flex-col">
       {/* 헤더 */}
       <header className="bg-slate-800 border-b border-slate-700 px-6 py-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div>
               <h1 className="text-2xl font-bold text-white">
-                🚚 Seoul Logistics Real-time Monitoring Dashboard
+                서울 물류 모니터링
               </h1>
               <p className="text-sm text-slate-400 mt-1">
-                서울시 특화 고성능 물류 데이터 시각화 솔루션
+                모의 차량 데이터 · 실제 운행 정보와 연결되지 않습니다
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
               <label htmlFor="dataCount" className="text-sm text-slate-300">
                 물류 차량 데이터 수:
@@ -241,7 +240,7 @@ export default function DashboardPage() {
       </header>
 
       {/* 메인 콘텐츠 */}
-      <div className="relative flex-1 overflow-hidden">
+      <div ref={containerRef} className="relative flex-1 min-h-0 overflow-hidden">
         {/* 로딩 인디케이터 */}
         {isLoading && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-900/50">
@@ -260,7 +259,7 @@ export default function DashboardPage() {
         <DashboardCanvas className="w-full" onNodeClick={handleNodeClick} />
 
         {/* 사이드 패널 */}
-        <div className="absolute top-4 right-4 z-10 space-y-4">
+        <div className="absolute top-4 right-4 z-10 space-y-4 max-h-[calc(100%-2rem)] overflow-y-auto max-w-[calc(100%-2rem)]">
           <StatusLegend />
 
           {/* 선택된 노드 정보 (차량 + 물류 정보) */}

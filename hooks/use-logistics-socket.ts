@@ -10,7 +10,7 @@ import type { RawLogisticsData } from '@/types/logistics';
 
 interface UseLogisticsSocketOptions {
   url?: string;
-  bufferSize?: number; // 버퍼 크기 (기본값: 100)
+  bufferSize?: number; // 기존 호출부 호환용; 수량과 관계없이 다음 프레임에 반영
   enabled?: boolean; // WebSocket 활성화 여부 (기본값: false, 실제 서버가 없으므로)
 }
 
@@ -21,7 +21,7 @@ interface UseLogisticsSocketOptions {
  * @param options WebSocket 옵션
  */
 export function useLogisticsSocket(options: UseLogisticsSocketOptions = {}) {
-  const { url, bufferSize = 100, enabled = false } = options;
+  const { url, enabled = false } = options;
   const updateDataBatch = useLogisticsStore((state) => state.updateDataBatch);
   const bufferRef = useRef<RawLogisticsData[]>([]);
   const socketRef = useRef<WebSocket | null>(null);
@@ -53,9 +53,9 @@ export function useLogisticsSocket(options: UseLogisticsSocketOptions = {}) {
         bufferRef.current.push(...dataArray);
 
         // 16ms(60fps) 주기로 버퍼에 쌓인 데이터를 한 번에 스토어에 반영
-        if (bufferRef.current.length >= bufferSize) {
+        if (bufferRef.current.length > 0) {
           // requestAnimationFrame을 사용하여 다음 프레임에 배치 업데이트
-          if (!rafIdRef.current) {
+          if (rafIdRef.current === null) {
             rafIdRef.current = requestAnimationFrame(flushBuffer);
           }
         }
@@ -73,13 +73,15 @@ export function useLogisticsSocket(options: UseLogisticsSocketOptions = {}) {
     };
 
     return () => {
-      if (rafIdRef.current) {
+      if (rafIdRef.current !== null) {
         cancelAnimationFrame(rafIdRef.current);
       }
+      bufferRef.current = [];
+      rafIdRef.current = null;
       if (socketRef.current) {
         socketRef.current.close();
       }
     };
-  }, [url, bufferSize, enabled, updateDataBatch]);
+  }, [url, enabled, updateDataBatch]);
 }
 

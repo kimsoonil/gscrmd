@@ -20,7 +20,6 @@ export const DashboardCanvas: React.FC<DashboardCanvasProps> = ({
   onNodeClick,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationFrameIdRef = useRef<number | null>(null);
   const visibleData = useVisibleData();
   const { width, height } = useCanvasSize();
   const clickHandlerRef = useRef(onNodeClick);
@@ -31,16 +30,6 @@ export const DashboardCanvas: React.FC<DashboardCanvasProps> = ({
   }, [onNodeClick]);
 
   const bgImageRef = useRef<HTMLImageElement | null>(null);
-
-  // 배경 이미지 로드
-  useEffect(() => {
-    const img = new Image();
-    img.src = "/images/seoul-wide-map.png";
-    img.onload = () => {
-      bgImageRef.current = img;
-      render();
-    };
-  }, []);
 
   // 고성능 렌더링 로직
   const render = useCallback(() => {
@@ -113,21 +102,22 @@ export const DashboardCanvas: React.FC<DashboardCanvasProps> = ({
     // 호버 효과를 위한 마우스 위치 추적
   }, [visibleData, width, height]);
 
-  // 렌더링 루프 시작
+  // 변경이 있을 때만 그립니다. 이미지 로드 후에도 최신 데이터를 사용합니다.
   useEffect(() => {
-    const animate = () => {
-      render();
-      animationFrameIdRef.current = requestAnimationFrame(animate);
-    };
-
-    animationFrameIdRef.current = requestAnimationFrame(animate);
-
-    return () => {
-      if (animationFrameIdRef.current !== null) {
-        cancelAnimationFrame(animationFrameIdRef.current);
-      }
-    };
+    render();
   }, [render]);
+
+  const renderRef = useRef(render);
+  useEffect(() => { renderRef.current = render; }, [render]);
+  useEffect(() => {
+    const img = new Image();
+    img.onload = () => {
+      bgImageRef.current = img;
+      renderRef.current();
+    };
+    img.src = "/images/seoul-wide-map.png";
+    return () => { img.onload = null; };
+  }, []);
 
   // 캔버스 클릭 이벤트 처리 (고성능 클릭 피킹)
   const handleCanvasClick = useCallback(
@@ -143,7 +133,7 @@ export const DashboardCanvas: React.FC<DashboardCanvasProps> = ({
       const y = (e.clientY - rect.top) * (canvas.height / (rect.height * dpr));
 
       // 줌 및 중앙 정렬 역산하여 원본 좌표 계산
-      const zoom = 1;
+      const zoom = 1.2;
       const originalX = (x - width / 2) / zoom + width / 2;
       const originalY = (y - height / 2) / zoom + height / 2;
 
@@ -152,8 +142,8 @@ export const DashboardCanvas: React.FC<DashboardCanvasProps> = ({
         originalX,
         originalY,
         visibleData,
-        dpr,
-        10,
+        1,
+        10 / zoom,
       );
 
       if (clickedVehicle && clickHandlerRef.current) {
@@ -165,6 +155,8 @@ export const DashboardCanvas: React.FC<DashboardCanvasProps> = ({
 
   return (
     <canvas
+      role="img"
+      aria-label="물류 차량 위치 지도"
       ref={canvasRef}
       className={className}
       onClick={handleCanvasClick}

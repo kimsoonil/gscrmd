@@ -1,121 +1,54 @@
-# 🚚 Global Supply Chain Real-time Monitoring Dashboard
+# 물류 모니터링 대시보드 (gscrmd)
 
-브라우저 성능 한계를 극복한 고성능 물류 데이터 시각화 솔루션
+모의 물류 데이터를 Canvas로 표시하는 개인 기술 검증 프로젝트입니다. 회사 SCM 코드·내부 데이터는 사용하지 않습니다.
 
-대규모 비즈니스 데이터를 어떻게 효율적으로 시각화하고 최적화할 수 있는지에 대한 기술적 해답을 담은 프로젝트입니다.
+## 확인된 구현
 
-## 🌟 Key Achievements 
+- Next.js 15 / React 18 / TypeScript / Zustand
+- `app/dashboard/page.tsx`: 기본 10,000개 모의 차량 생성, 데이터 개수 선택
+- `components/dashboard-canvas.tsx`: Canvas 2D 색상별 배치 렌더링, 차량 선택
+- `utils/logistics-processor.ts`: 메인 스레드에서 비동기 청크 단위 좌표 전처리
+- `store/logistics-store.ts`: 상태 저장과 requestAnimationFrame 배치 업데이트
+- `hooks/use-logistics-socket.ts`: WebSocket 연결 훅. 기본 비활성, 실제 물류 서버 미연동
+- `workers/`: Worker 구현 파일은 있으나 현재 상태 저장소의 처리 경로와 구분해야 합니다.
 
-- **성능 최적화**: Canvas API 기반 자체 렌더링 엔진 구축으로 10,000개 이상의 실시간 물류 노드 노출 시에도 60FPS 유지
-- **UX 개선**: 대용량 데이터 로딩 속도를 초기 대비 70% 단축 (Web Worker 및 차분 업데이트 로직 적용)
-- **안정성**: 비즈니스 로직에 대한 VITest & RTL 기반 테스트 커버리지 80% 달성 및 회귀 오류 방지
-- **생산성**: Cursor AI를 활용한 유틸리티 함수 자동 생성 워크플로우를 팀 내 전파하여 개발 속도 30% 향상
+Deck.gl 의존성과 OffscreenCanvas 렌더링은 현재 구현에서 확인되지 않았습니다.
 
-## 🚀 시작하기
+## 성능 주장 검증 상태
 
-### 설치
+이전 README의 60FPS, 로딩 70% 단축, 커버리지 80%, 개발 속도 30% 향상, 클릭 10ms 이내는 측정 환경·원본 결과·비교 기준이 없어 검증된 성과에서 제외했습니다. 클릭 탐색은 거리 제곱 기반 O(n) 순회이며 공간 인덱스나 조기 루프 종료를 사용하지 않습니다.
 
-```bash
-npm install
+재측정 시 commit SHA, OS/CPU, 브라우저 버전, DPR, 화면 크기, 데이터 생성 seed, warm-up 및 반복 횟수를 기록하세요. FPS는 실제 브라우저 렌더링에서 10k/50k/100k 데이터별 중앙값·p95 프레임 시간을 기록하고, 로딩은 생성·전처리·첫 그리기를 분리해야 합니다. 커버리지는 아래 명령의 원본 리포트를 보관해야 합니다.
+
+## 실행
+
+Node 24와 pnpm 10.12.1 기준:
+
+```sh
+corepack pnpm install --frozen-lockfile
+corepack pnpm dev
+corepack pnpm exec vitest run
+corepack pnpm test:coverage --run
+corepack pnpm build
 ```
 
-### 개발 서버 실행
+테스트 통과 여부는 별도 검증 보고서를 참조하세요. 빌드 성공이나 jsdom 테스트는 60FPS를 증명하지 않습니다.
 
-```bash
-npm run dev
+## 재현 가능한 CPU 피킹 측정
+
+```sh
+node scripts/benchmark-picking.mjs
 ```
 
-브라우저에서 [http://localhost:3000](http://localhost:3000)을 열어 확인하세요.
+고정 seed 42, warm-up 50회, 측정 200회, 데이터 10k/50k/100k 기준 Node CPU 함수만 측정합니다. Canvas 렌더링·FPS·실제 클릭 입력 지연과는 다른 지표입니다. 2026-11-20 Apple M4 / macOS arm64 / Node 24.19.0에서 10k 중앙값 약 0.0115ms, p95 약 0.0125ms였습니다. 실행 환경과 원본 JSON을 함께 보관합니다.
 
-### 프로덕션 빌드
+같은 날 수정 후 테스트 18개가 통과했고, Vitest V8 전체 파일 기준 문장·라인 커버리지는 29.85%였습니다. 이전 80% 주장과 같은 측정으로 간주하지 않습니다.
 
-```bash
-npm run build
-npm start
-```
+## 데이터 갱신 및 렌더링 보완
 
-### 테스트 실행
-
-```bash
-# 테스트 실행
-npm test
-
-# 테스트 UI 모드
-npm run test:ui
-
-# 커버리지 리포트 생성
-npm run test:coverage
-```
-
-## 🛠 Tech Stack
-
-### Core
-- **React 18** - 안정적인 React 기능 활용
-- **TypeScript** - 타입 안정성 보장
-- **Zustand** - 경량 상태 관리
-
-### Visualization
-- **Canvas API** - 고성능 커스텀 렌더링
-- **Deck.gl** - 대규모 맵 데이터 렌더링
-
-### Processing
-- **Web Worker** - 백그라운드 계산 처리
-
-### Styling
-- **Tailwind CSS** - 유틸리티 퍼스트 모던 디자인
-
-### Testing
-- **VITest** - 빠른 단위 테스트
-- **React Testing Library** - 컴포넌트 테스트
-
-## 🏗 Key Features & Technical Challenges
-
-### 1. 고성능 맵 렌더링 (Large-scale Data Rendering)
-
-**Challenge**: 수만 개의 물류 차량 위치 정보 동시 렌더링 시 발생하는 메모리 누수 및 프레임 드랍
-
-**Solution**: React의 선언적 렌더링 대신 명령형 Canvas API를 결합한 하이브리드 구조 채택. 픽셀 기반의 최적화를 통해 GPU 가속을 적극 활용하였습니다.
-
-### 2. 비즈니스 로직 분리 (Web Worker Threads)
-
-**Challenge**: 실시간 경로 최적화 계산 시 UI 스레드 차단(Blocking) 발생
-
-**Solution**: 무거운 계산 로직을 Web Worker로 이관하고 OffscreenCanvas를 활용하여 UI 렌더링 간섭을 원천 차단했습니다.
-
-### 3. 상태 관리 및 동기화 전략
-
-**Challenge**: 실시간 API 요청 폭주 시 불필요한 리렌더링 발생
-
-**Solution**: Zustand의 선택적 구독(Selector) 기능을 극대화하고, requestAnimationFrame 기반의 배치 업데이트(Batch Update)를 통해 렌더링 횟수를 획기적으로 줄였습니다.
-
-### 4. 고성능 클릭 인터랙션 (Pixel-Perfect Picking)
-
-**문제 상황**: 수만 개의 점이 찍힌 캔버스에서 특정 차량을 클릭할 때 0.5초 이상의 지연 시간이 발생함
-
-**해결 방안**: 단순 루프 대신 클릭 좌표 기반의 거리 제곱 비교 로직(Distance Squared)을 적용하고, 데이터 가공을 비동기 청크 처리로 분리하여 클릭 반응성을 즉각적으로 개선함. Math.sqrt() 호출을 제거하고 조기 종료(Early Exit) 최적화를 적용하여 성능을 향상시켰습니다.
-
-**결과**: 10,000개의 객체 환경에서 클릭 피킹 속도를 10ms 이내로 단축하여 사용자 경험(UX)을 획기적으로 향상함
-
-### 5. 실시간 데이터 스트리밍 및 배치 업데이트
-
-**Challenge**: 실시간 데이터가 들어올 때마다 상태 업데이트를 하면 브라우저가 과부하됨
-
-**Solution**: WebSocket 데이터를 버퍼에 모아두고, requestAnimationFrame 주기(60fps)에 맞춰 배치 단위로 한 번에 업데이트하여 렌더링 횟수를 최소화함
-
-## 👨‍💼 Leadership & DX (Developer Experience)
-
-### Architecture 주도
-단순 기능 구현을 넘어, 팀원들이 재사용할 수 있는 시각화 공통 컴포넌트 라이브러리 설계
-
-### AI Pair Programming
-Cursor 및 CLI 기반 AI 도구를 도입하여 반복적인 데이터 파싱 로직을 자동화하고 코드 리뷰 퀄리티를 높였습니다
-
-### Agile Management
-Jira와 데일리 스크럼을 활용하여 복잡한 프로젝트 일정을 투명하게 관리하고 스프린트 회고를 통해 팀 역량을 상향 평준화했습니다
-
-## 📝 Contact
-
-- **Github**: [https://github.com/kimsoonil](https://github.com/kimsoonil)
-- **Blog**: [https://k-soonil.tistory.com](https://k-soonil.tistory.com)
-- **Email**: rlatnsdlf158@naver.com
-
+- 오래 걸린 이전 요청이 최신 데이터/화면 크기 처리 결과를 덮지 않도록 요청 순서를 확인합니다.
+- 실시간 갱신은 ID별 최신 timestamp를 반영하며, 연속 배치에서 다른 차량 데이터가 유실되지 않습니다.
+- 소켓 메시지가 한 건뿐이어도 다음 animation frame에 반영하며, 연결 해제 시 대기 버퍼를 폐기합니다. 실제 서버 연결은 기본 비활성입니다.
+- Canvas는 데이터·크기·배경 변경 시에만 다시 그립니다. 매 프레임 전체 지도 초기화를 반복하지 않습니다.
+- 실제 지도 컨테이너의 크기를 ResizeObserver로 측정합니다. 모바일에서 헤더가 여러 줄이어도 지도 높이를 맞춥니다.
+- 테스트: 최신 요청 우선, 차량별 중복/이전 이벤트, 소량 메시지 반영/연결 해제 회귀 검증 포함.

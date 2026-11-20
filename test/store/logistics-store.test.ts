@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { useLogisticsStore } from '@/store/logistics-store';
+import { useLogisticsStore, useVisibleData, useIsLoading, useError } from '@/store/logistics-store';
 import { generateMockLogisticsData } from '@/utils/mock-data';
 import type { RawLogisticsData } from '@/types/logistics';
 
@@ -63,6 +63,7 @@ describe('logistics store', () => {
         if (!state.isLoading && state.visibleData.length > 0) {
           const initialX = state.visibleData[0].x;
           
+          unsubscribe();
           // 캔버스 크기 변경
           setCanvasSize(2560, 1440);
           
@@ -84,7 +85,7 @@ describe('logistics store', () => {
   }, 10000);
 
   it('선택적 구독 훅이 올바르게 작동해야 합니다', () => {
-    const { useVisibleData, useIsLoading, useError } = require('@/store/logistics-store');
+
     
     // 선택적 구독이 가능한지 확인
     expect(typeof useVisibleData).toBe('function');

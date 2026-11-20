@@ -40,32 +40,8 @@ interface LogisticsState {
   clearError: () => void;
 }
 
-// 배치 업데이트를 위한 프레임 ID
-let batchUpdateFrameId: number | null = null;
-let pendingUpdate: (() => void) | null = null;
-
-/**
- * requestAnimationFrame 기반 배치 업데이트
- * 렌더링 횟수를 획기적으로 줄입니다.
- */
-function batchUpdate(updateFn: () => void): void {
-  if (pendingUpdate) {
-    pendingUpdate = updateFn;
-    return;
-  }
-
-  pendingUpdate = updateFn;
-
-  if (batchUpdateFrameId === null) {
-    batchUpdateFrameId = requestAnimationFrame(() => {
-      if (pendingUpdate) {
-        pendingUpdate();
-        pendingUpdate = null;
-      }
-      batchUpdateFrameId = null;
-    });
-  }
-}
+// 최신 요청의 처리 결과만 화면에 반영합니다.
+let processingVersion = 0;
 
 export const useLogisticsStore = create<LogisticsState>((set, get) => ({
   rawData: [],
@@ -77,41 +53,25 @@ export const useLogisticsStore = create<LogisticsState>((set, get) => ({
   viewportBounds: null,
 
   setRawData: async (data: RawLogisticsData[]) => {
+    const version = ++processingVersion;
     const state = get();
-    
-    // 상태 업데이트
     set({ rawData: data, isLoading: true, error: null });
-
     try {
-      // 비동기로 데이터 전처리 (청크 단위 처리로 UI 스레드 블로킹 방지)
-      const processedData = await processLogisticsData(
-        data,
-        state.canvasWidth,
-        state.canvasHeight,
-        state.viewportBounds || undefined
-      );
-
-      // 배치 업데이트로 렌더링 최적화
-      batchUpdate(() => {
-        set({ visibleData: processedData, isLoading: false });
-      });
+      const processed = await processLogisticsData(data, state.canvasWidth, state.canvasHeight, state.viewportBounds || undefined);
+      if (version === processingVersion) set({ visibleData: processed, isLoading: false });
     } catch (error) {
-      set({
-        error: error instanceof Error ? error.message : '데이터 처리 중 오류가 발생했습니다.',
-        isLoading: false,
-      });
+      if (version === processingVersion) set({ error: error instanceof Error ? error.message : '데이터 처리 오류', isLoading: false });
     }
   },
 
   setCanvasSize: (width: number, height: number) => {
     const state = get();
+    if (width <= 0 || height <= 0 || (state.canvasWidth === width && state.canvasHeight === height)) return;
     set({ canvasWidth: width, canvasHeight: height });
     
     // 캔버스 크기가 변경되면 데이터 재처리
     if (state.rawData.length > 0) {
-      batchUpdate(() => {
-        get().setRawData(state.rawData);
-      });
+      get().setRawData(get().rawData);
     }
   },
 
@@ -121,21 +81,17 @@ export const useLogisticsStore = create<LogisticsState>((set, get) => ({
     
     // 뷰포트가 변경되면 데이터 재처리
     if (state.rawData.length > 0) {
-      batchUpdate(() => {
-        get().setRawData(state.rawData);
-      });
+      get().setRawData(get().rawData);
     }
   },
 
   updateDataBatch: (newData: RawLogisticsData[]) => {
-    const state = get();
-    // 기존 데이터와 새 데이터를 병합
-    const mergedData = [...state.rawData, ...newData];
-    
-    // 배치 업데이트로 렌더링 최적화
-    batchUpdate(() => {
-      get().setRawData(mergedData);
-    });
+    const merged = new Map(get().rawData.map(item => [item.id, item]));
+    for (const item of newData) {
+      const previous = merged.get(item.id);
+      if (!previous || item.timestamp >= previous.timestamp) merged.set(item.id, item);
+    }
+    get().setRawData([...merged.values()]);
   },
 
   clearError: () => {
